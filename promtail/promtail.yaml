@@ -1,0 +1,102 @@
+server:
+    http_listen_port: 9080
+    grpc_listen_port: 0
+    log_level: "info"
+
+positions:
+    filename: /tmp/positions.yaml
+
+clients:
+    - url: https://loki_loki:3100/loki/api/v1/push   # 更新到loki到url
+
+scrape_configs:
+
+# nginx日志配置例子， nginx采用json输出
+- job_name: nginx
+  static_configs:
+    - targets:
+        - localhost
+      labels:
+        app: nginx
+        site: china
+        __path__: /var/log/nginx/*
+  pipeline_stages:
+  - match:
+      selector: '{app="nginx"}'
+      stages:
+      - json:
+          expressions:
+            request_uri:
+            http_host:
+            server_name:
+            upstream:
+            request_method:
+            status:
+      - labels:
+          time:
+          request_uri:
+          http_host:
+          server_name:
+          upstream:
+          request_method:
+          status:
+      - timestamp:
+          source: time_local
+          format: 02/Jan/2006:15:04:05 -0700
+
+
+# java服务配置例子
+- job_name: iot
+  static_configs:
+    - targets:
+        - localhost
+      labels:
+        app: iot
+        site: china
+        __path__: /var/log/app/iot.log
+  pipeline_stages:
+  - match:
+      selector: '{app="iot"}'
+      stages:
+       - drop:
+           expression: '^ +at'
+       - multiline:
+           firstline: '^\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}:\d{2}.\d{3}'
+           max_wait_time: 3s
+       - regex:
+           expression: '^(?P<time>\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}:\d{2}.\d{3}) \S+ (?P<level>\w+) (?P<msg>.*)'
+       - timestamp:
+           source: time
+           format: '2006-01-02 15:04:05.999'
+       - labels:
+           level:
+
+
+# php laraval日志配置例子
+- job_name: app-php
+  static_configs:
+    - targets:
+        - localhost
+      labels:
+        app: app-php
+        site: china
+        __path__: /var/www/app/storage/logs/*.log
+  pipeline_stages:
+  - match:
+      selector: '{app="app-php"}'
+      stages:
+
+      - multiline:
+          # Identify timestamps as first line of a multiline block. Enclose the string in single quotes.
+          firstline: '^\[\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}:\d{2}\]'
+          max_wait_time: 3s
+ 
+      - regex:
+          expression: '^\[(?P<time>\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}:\d{2})\] dev\.(?P<level>\w+):.*' 
+      - labels:
+          level:
+          
+      - timestamp:
+          source: time
+          format: 2006-01-02 15:04:05
+

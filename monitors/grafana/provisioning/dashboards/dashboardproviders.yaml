@@ -1,0 +1,12 @@
+apiVersion: 1
+providers:
+- allowUiUpdates: false
+  disableDeletion: false
+  editable: false
+  folder: common
+  name: common
+  options:
+    path: /etc/grafana/provisioning/dashboards/common
+  orgId: 1
+  type: file
+  updateIntervalSeconds: 300

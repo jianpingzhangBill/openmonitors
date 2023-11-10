@@ -1,0 +1,65 @@
+version: "3.3"
+services:
+
+  alertmanager:
+    user: 0:0
+    image: prom/alertmanager
+    volumes:
+      - type: bind
+        source: /opt/openmonitors/monitor/alertmanager/
+        target: /etc/alertmanager/
+      - alertmanager_data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--web.external-url='  # 这里更新成alertmanager需要暴露到网络的 url
+    network_mode: host
+    restart: always
+
+  prometheus:
+    user: 0:0
+    image: prom/prometheus
+    environment:
+      TZ: Asia/Shanghai
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yaml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+      - '--web.external-url='  # 这里更新成prometheus需要暴露到网络的 url
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - type: bind
+        source: /opt/openmonitors/monitor/prometheus
+        target: /etc/prometheus
+      - prometheus_data:/prometheus
+    network_mode: host
+    restart: always
+
+  grafana:
+    image: grafana/grafana
+    user: "0:0"
+    environment:
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+      GF_PATHS_HOME: /usr/share/grafana
+      GF_SECURITY_ADMIN_PASSWORD: 'admin#openmonitors'
+      GF_SECURITY_ADMIN_USER: admin
+      GF_PATHS_DATA: /var/lib/grafana/
+#      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-worldmap-panel
+      GF_PATHS_CONFIG: /etc/grafana/grafana.ini
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - granfana_data:/var/lib/grafana
+      - type: bind
+        source: /opt/openmonitors/monitor/grafana
+        target: /etc/grafana
+    network_mode: host
+    restart: always
+    depends_on:
+      - prometheus
+
+volumes:
+  alertmanager_data:
+  grafana_data:
+  prometheus_data:

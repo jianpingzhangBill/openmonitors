@@ -1,0 +1,11 @@
+version: "3.3"
+services:
+  webhook:
+    image: webhook
+    network_mode: host
+    restart: always
+    command:
+     - python3
+     - /app/webhook.py
+    volumes:
+      - ./wechat.py:/app/webhook.py   # 根据需要调整

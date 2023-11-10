@@ -1,0 +1,9 @@
+- job_name: 'hk'
+  static_configs:
+  - targets: 
+    - 10.1.1.1:9100
+    - 10.1.1.1:8080  # 
+    - 10.1.1.1:9256  # process_exporter
+    labels:
+      hostname: docker1
+  

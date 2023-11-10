@@ -1,0 +1,21 @@
+
+apiVersion: 1
+contactPoints:
+- name: oncall
+  orgId: 1
+  receivers:
+  - disableResolveMessage: false
+    name: oncall
+    settings:
+      httpMethod: POST
+      url: http://webhook:3001
+    type: webhook
+    uid: oncall
+delete_contactPoints:
+- name: oncall
+  orgId: 1
+policies:
+- group_by:
+  - alertname
+  receiver: oncall
+  repeat_interval: 30m

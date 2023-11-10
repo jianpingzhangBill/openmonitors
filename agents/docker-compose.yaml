@@ -1,0 +1,75 @@
+version: "3.3"
+services:
+
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    volumes:
+      - "/:/host:ro,rslave"
+      - "/proc:/host/proc:ro"
+      - "/sys:/host/sys:ro"
+    command:
+    - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+    - '--collector.diskstats.ignored-devices=^(ram|loop|fd)d+$$'
+    - '--collector.processes'
+    - '--path.rootfs=/host'
+    restart: always
+    ports:
+      - 9100:9100
+    deploy:
+      mode: global
+      placement:
+        constraints: [node.platform.os == linux]
+
+  cadvisor:
+    image: public.ecr.aws/x0r5z1v0/cadvisor/cadvisor:v0.47.0
+    ports:
+      - 8080:8080
+    restart: always
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    deploy:
+      mode: global
+      placement:
+        constraints: [node.platform.os == linux]
+
+# 以下部分根据需要 添加
+  redis-exporter:
+    image: oliver006/redis_exporter
+    command: --redis.addr=redis://127.0.0.1:6379
+    restart: always
+    network_mode: host
+
+  mysqld-exporter:
+    image: swr.cn-south-1.myhuaweicloud.com/starsl.cn/mysqld_exporter:latest
+    command: --config.my-cnf=/etc/my.cnf
+    volumes:
+      - /opt/prom/my.cnf:/etc/my.cnf
+    network_mode: host
+    restart: always
+
+  process-exporter:
+    image: ncabatoff/process-exporter
+    user: 0:0
+    command: --procfs /host/proc -config.path /config/process-config.yml
+    restart: always
+    volumes:
+      - /proc:/host/proc
+      - /opt/prom/process-config.yml:/config/process-config.yml
+    network_mode: host
+
+
+  blackbox-exporter:
+    image: quay.io/prometheus/blackbox-exporter:latest
+    command:
+      - --config.file=/etc/blackbox/blackbox.yaml
+      - --web.listen-address=:9115
+      - --log.level=info
+    volumes:
+      - type: bind
+        source: /opt/prom/blackbox_conf
+        target: /etc/blackbox
+    network_mode: host
+    restart: always

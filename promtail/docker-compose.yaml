@@ -1,0 +1,21 @@
+version: "3.3"
+
+services:
+  php:
+    user: 0:0
+    image: public.ecr.aws/bitnami/promtail:2.7.3
+    volumes:
+      - /var/www:/var/www
+      - tmp:/tmp
+      - /var/log/nginx:/var/log/nginx
+      - /var/log/app:/var/log/app
+    configs:
+     - source: promtail.yaml
+       target: /etc/promtail/promtail.yaml
+    ports:
+      - "9080"
+    command: -config.file=/etc/promtail/promtail.yaml
+
+volumes:
+  tmp:
+  
